@@ -1,10 +1,10 @@
-// services/movieService.js
 import fetch from "node-fetch";
 import { getDb } from "../db.js";
 
 const TMDB_API = process.env.TMDB_API_KEY;
 
-// ---------------- Helper: Fetch TMDB Details ----------------
+/* ================= TMDB FETCH ================= */
+
 async function fetchTMDB(tmdbID) {
 	const res = await fetch(
 		`https://api.themoviedb.org/3/movie/${tmdbID}?api_key=${TMDB_API}`
@@ -21,26 +21,31 @@ async function fetchTMDB(tmdbID) {
 	};
 }
 
-// ---------------- Add Movie ----------------
+/* ================= ADD MOVIE ================= */
+
 export async function addMovieService(tmdbID, fileLink, options = {}) {
 	const db = await getDb();
 	const movies = db.collection("movies");
 
-	const existing = await movies.findOne({ tmdbID });
-	if (existing) throw new Error("Movie already exists");
+	if (await movies.findOne({ tmdbID })) {
+		throw new Error("Movie already exists");
+	}
 
 	const data = await fetchTMDB(tmdbID);
 
-	const { position = "l", pinned = false } = options;
+	const position = options.position || "l"; // f | l
+	const pinned = Boolean(options.pinned);
 
-	// Determine order
-	let order = Date.now();
+	let order = 0;
+
 	if (position === "f") {
+		// Insert BEFORE first movie
 		const first = await movies.find().sort({ order: 1 }).limit(1).toArray();
-		order = first.length ? first[0].order - 1 : order;
-	} else if (position === "l") {
+		order = first.length ? first[0].order - 1 : 0;
+	} else {
+		// Insert AFTER last movie (DEFAULT)
 		const last = await movies.find().sort({ order: -1 }).limit(1).toArray();
-		order = last.length ? last[0].order + 1 : order;
+		order = last.length ? last[0].order + 1 : 0;
 	}
 
 	const movie = {
@@ -56,7 +61,8 @@ export async function addMovieService(tmdbID, fileLink, options = {}) {
 	return movie;
 }
 
-// ---------------- Update Movie ----------------
+/* ================= UPDATE MOVIE ================= */
+
 export async function updateMovieService(tmdbID, fileLink, options = {}) {
 	const db = await getDb();
 	const movies = db.collection("movies");
@@ -67,21 +73,25 @@ export async function updateMovieService(tmdbID, fileLink, options = {}) {
 	const data = await fetchTMDB(tmdbID);
 
 	let order = existing.order;
-	if (options.position) {
-		if (options.position === "f") {
-			const first = await movies.find().sort({ order: 1 }).limit(1).toArray();
-			order = first.length ? first[0].order - 1 : order;
-		} else if (options.position === "l") {
-			const last = await movies.find().sort({ order: -1 }).limit(1).toArray();
-			order = last.length ? last[0].order + 1 : order;
-		}
+
+	if (options.position === "f") {
+		const first = await movies.find().sort({ order: 1 }).limit(1).toArray();
+		order = first.length ? first[0].order - 1 : order;
+	}
+
+	if (options.position === "l") {
+		const last = await movies.find().sort({ order: -1 }).limit(1).toArray();
+		order = last.length ? last[0].order + 1 : order;
 	}
 
 	const updated = {
 		...data,
 		tmdbID,
 		fileLink,
-		pinned: options.pinned ?? existing.pinned,
+		pinned:
+			typeof options.pinned === "boolean"
+				? options.pinned
+				: existing.pinned,
 		order,
 		updatedAt: new Date(),
 	};
@@ -90,7 +100,8 @@ export async function updateMovieService(tmdbID, fileLink, options = {}) {
 	return updated;
 }
 
-// ---------------- Delete Movie ----------------
+/* ================= DELETE ================= */
+
 export async function deleteMovieService(tmdbID) {
 	const db = await getDb();
 	const movies = db.collection("movies");
@@ -102,7 +113,8 @@ export async function deleteMovieService(tmdbID) {
 	return movie;
 }
 
-// ---------------- Get Movies with Pagination + Search + Sort ----------------
+/* ================= GET MOVIES ================= */
+
 export async function getMoviesService({
 	page = 1,
 	limit = 20,
@@ -112,19 +124,15 @@ export async function getMoviesService({
 	const db = await getDb();
 	const movies = db.collection("movies");
 
-	// Build search filter
 	const query = q ? { title: { $regex: q, $options: "i" } } : {};
-
-	// Count total for pagination
 	const totalMovies = await movies.countDocuments(query);
 
-	// Sorting
-	let sortOption = {};
-	if (sort === "latest") sortOption = { order: -1, createdAt: -1 };
-	else if (sort === "oldest") sortOption = { order: 1, createdAt: 1 };
-	else if (sort === "pinned") sortOption = { pinned: -1, order: -1, createdAt: -1 };
+	let sortOption = { order: 1 };
 
-	// Fetch paginated results
+	if (sort === "latest") sortOption = { order: 1, createdAt: -1 };
+	if (sort === "oldest") sortOption = { order: -1, createdAt: 1 };
+	if (sort === "pinned") sortOption = { pinned: -1, order: 1 };
+
 	const results = await movies
 		.find(query)
 		.sort(sortOption)
@@ -132,22 +140,21 @@ export async function getMoviesService({
 		.limit(limit)
 		.toArray();
 
-	// Map MongoDB docs to include `id` for frontend routing
-	const mappedResults = results.map((movie) => ({
-		id: movie.tmdbID, // frontend uses `movie.id` for routing
-		tmdbID: movie.tmdbID,
-		title: movie.title,
-		overview: movie.overview,
-		poster_path: movie.poster_path,
-		release_date: movie.release_date,
-		genres: movie.genres || [],
-		fileLink: movie.fileLink,
-		pinned: movie.pinned || false,
-		order: movie.order || 0,
-		createdAt: movie.createdAt || null,
+	const mapped = results.map((m) => ({
+		id: m.tmdbID, // IMPORTANT for frontend routing
+		tmdbID: m.tmdbID,
+		title: m.title,
+		overview: m.overview,
+		poster_path: m.poster_path,
+		release_date: m.release_date,
+		genres: m.genres || [],
+		fileLink: m.fileLink,
+		pinned: m.pinned || false,
 	}));
 
-	const totalPages = Math.ceil(totalMovies / limit);
-
-	return { results: mappedResults, totalPages, currentPage: page };
+	return {
+		results: mapped,
+		totalPages: Math.ceil(totalMovies / limit),
+		currentPage: page,
+	};
 }
