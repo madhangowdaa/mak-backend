@@ -1,16 +1,17 @@
+// routes/series.js
 import express from 'express';
 import {
     addSeriesController,
     updateSeriesController,
     deleteSeriesController,
-    getAllSeriesController
+    getSeriesController
 } from '../controllers/seriesController.js';
 import { verifyAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all series
-router.get('/', getAllSeriesController);
+// Public: get series (paginated, searchable)
+router.get('/', getSeriesController);
 
 // Admin routes
 router.post('/add', verifyAdmin, addSeriesController);
