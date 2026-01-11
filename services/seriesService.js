@@ -5,15 +5,33 @@ import { LANGUAGE_MAP } from '../utils/languageMap.js';
 
 const TMDB_API = process.env.TMDB_API_KEY;
 
-// ---------------- Get All Series ----------------
-export async function getAllSeriesService() {
+// ---------------- Get Series with Pagination + Search + Sort ----------------
+export async function getSeriesService({ page = 1, limit = 20, q = "", sort = "latest" }) {
     const db = await getDb();
-    const collection = db.collection('series');
-    return collection.find({}).toArray();
+    const collection = db.collection("series");
+
+    const query = q ? { title: { $regex: q, $options: "i" } } : {};
+    const totalSeries = await collection.countDocuments(query);
+
+    // Sorting
+    let sortOption = {};
+    if (sort === "latest") sortOption = { order: -1 };
+    else if (sort === "oldest") sortOption = { order: 1 };
+    else if (sort === "pinned") sortOption = { pinned: -1, order: -1 };
+
+    const results = await collection
+        .find(query)
+        .sort(sortOption)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .toArray();
+
+    const totalPages = Math.ceil(totalSeries / limit);
+    return { results, totalPages, currentPage: page };
 }
 
 // ---------------- Add Series ----------------
-export async function addSeriesService(seriesData) {
+export async function addSeriesService(seriesData, options = {}) {
     const db = await getDb();
     const collection = db.collection('series');
 
@@ -32,10 +50,24 @@ export async function addSeriesService(seriesData) {
         })),
     }));
 
+    const { position = 'l', pinned = false } = options;
+
+    let order = Date.now();
+    if (position === 'f') {
+        const first = await collection.find().sort({ order: 1 }).limit(1).toArray();
+        order = first.length ? first[0].order - 1 : order;
+    } else if (position === 'l') {
+        const last = await collection.find().sort({ order: -1 }).limit(1).toArray();
+        order = last.length ? last[0].order + 1 : order;
+    }
+
     const newSeries = {
         tmdbID: seriesData.tmdbID,
         ...tmdbInfo,
         seasons,
+        pinned,
+        order,
+        createdAt: new Date(),
     };
 
     await collection.insertOne(newSeries);
@@ -43,42 +75,54 @@ export async function addSeriesService(seriesData) {
 }
 
 // ---------------- Update Series ----------------
-export async function updateSeriesService(updateData) {
+export async function updateSeriesService(updateData, options = {}) {
     const { tmdbID, seasonNumber, language, quality, fileLink } = updateData;
+    const { position, pinned } = options;
+
     const db = await getDb();
     const collection = db.collection('series');
 
     const series = await collection.findOne({ tmdbID });
     if (!series) throw new Error('Series not found');
 
-    // Find or create season
-    let season = series.seasons.find(
-        s => s.seasonNumber === seasonNumber && s.language === language
-    );
+    // Update pinned
+    if (pinned !== undefined) series.pinned = pinned;
 
-    if (!season) {
-        season = {
-            seasonNumber,
-            language,
-            languageName: LANGUAGE_MAP[language] || language,
-            versions: [],
-        };
-        series.seasons.push(season);
+    // Update order
+    if (position) {
+        let order = series.order;
+        if (position === 'f') {
+            const first = await collection.find().sort({ order: 1 }).limit(1).toArray();
+            order = first.length ? first[0].order - 1 : order;
+        } else if (position === 'l') {
+            const last = await collection.find().sort({ order: -1 }).limit(1).toArray();
+            order = last.length ? last[0].order + 1 : order;
+        }
+        series.order = order;
     }
 
-    // Add or update quality dynamically
-    const existingVersion = season.versions.find(v => v.quality === quality);
-    if (existingVersion) {
-        existingVersion.fileLink = fileLink;
-    } else {
-        season.versions.push({ quality, fileLink });
+    // Update season/version if provided
+    if (seasonNumber && language && quality && fileLink) {
+        let season = series.seasons.find(
+            s => s.seasonNumber === seasonNumber && s.language === language
+        );
+
+        if (!season) {
+            season = {
+                seasonNumber,
+                language,
+                languageName: LANGUAGE_MAP[language] || language,
+                versions: [],
+            };
+            series.seasons.push(season);
+        }
+
+        const existingVersion = season.versions.find(v => v.quality === quality);
+        if (existingVersion) existingVersion.fileLink = fileLink;
+        else season.versions.push({ quality, fileLink });
     }
 
-    await collection.updateOne(
-        { tmdbID },
-        { $set: { seasons: series.seasons } }
-    );
-
+    await collection.updateOne({ tmdbID }, { $set: series });
     return series;
 }
 
@@ -98,7 +142,6 @@ export async function deleteSeriesService(deleteData) {
     }
 
     let updated = false;
-
     series.seasons = series.seasons
         .map(season => {
             if (
@@ -120,11 +163,7 @@ export async function deleteSeriesService(deleteData) {
 
     if (!updated) throw new Error('Season / quality not found');
 
-    await collection.updateOne(
-        { tmdbID },
-        { $set: { seasons: series.seasons } }
-    );
-
+    await collection.updateOne({ tmdbID }, { $set: { seasons: series.seasons } });
     return series;
 }
 
