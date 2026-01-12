@@ -1,5 +1,6 @@
 // controllers/carouselController.js
 import { getDb } from "../db.js";
+import { fetchMovieFromTMDB } from "../utils/tmdb.js";
 
 export async function getCarouselController(req, res) {
     const db = await getDb();
@@ -8,23 +9,48 @@ export async function getCarouselController(req, res) {
 }
 
 export async function addCarouselController(req, res) {
-    const { tmdbID, imagePath, imageType } = req.body;
-    if (!imagePath) return res.status(400).json({ error: "Image path required" });
+    try {
+        const { tmdbID, imagePath, imageType } = req.body;
 
-    const db = await getDb();
-    const slide = {
-        tmdbID: tmdbID || null,
-        title: tmdbID ? `TMDB Slide ${tmdbID}` : "External Slide",
-        imagePath,
-        imageType: imageType || "external",
-        order: 0,
-        isActive: true,
-        createdAt: new Date()
-    };
+        if (!tmdbID || !imagePath) {
+            return res.status(400).json({ error: "tmdbID and imagePath required" });
+        }
 
-    await db.collection("carousel").insertOne(slide);
-    res.json({ message: "Slide added", slide });
+        const db = await getDb();
+
+        // prevent duplicates
+        const exists = await db.collection("carousel").findOne({ tmdbID });
+        if (exists) {
+            return res.status(409).json({ error: "Slide already exists" });
+        }
+
+        // 🔥 Fetch from TMDB
+        const movie = await fetchMovieFromTMDB(tmdbID);
+
+        const slide = {
+            tmdbID,
+            title: movie.title,
+            overview: movie.overview,
+            poster_path: movie.poster_path,
+            release_date: movie.release_date,
+            genres: movie.genres.map(g => g.name),
+            imagePath,                 // carousel image
+            imageType: imageType || "tmdb",
+            pinned: false,
+            isActive: true,
+            order: 0,
+            createdAt: new Date(),
+        };
+
+        await db.collection("carousel").insertOne(slide);
+
+        res.json({ message: "Carousel slide added", slide });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 }
+
 
 export async function deleteCarouselController(req, res) {
     const { tmdbID } = req.body;
