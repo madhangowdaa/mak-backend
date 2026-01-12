@@ -5,6 +5,7 @@ import moviesRouter from './routes/movies.js';
 import seriesRouter from './routes/series.js';
 import tmdbRouter from "./routes/tmdb.js";
 import tmdbRoutes from "./routes/tmdbRoutes.js";
+import carouselRoutes from "./routes/carouselRoutes.js";
 
 dotenv.config();
 
@@ -16,6 +17,8 @@ app.use('/api', moviesRouter);
 app.use('/api/series', seriesRouter);
 app.use("/api/tmdb", tmdbRouter);
 app.use("/api/populartmdb", tmdbRoutes);
+app.use("/api/carousel", carouselRoutes);
+app.use("/uploads", express.static("uploads")); // serve uploaded images
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
