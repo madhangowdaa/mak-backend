@@ -4,7 +4,9 @@ import {
 	updateMovieService,
 	deleteMovieService,
 	getMoviesService,
+	getRecentMoviesService,
 } from '../services/movieService.js';
+
 
 export async function addMovieController(req, res) {
 	try {
@@ -62,4 +64,17 @@ export async function getAllMoviesController(req, res) {
 	}
 }
 
+export async function getRecentMoviesController(req, res) {
+	try {
+		const { limit = 10 } = req.query;
 
+		const movies = await getRecentMoviesService(Number(limit));
+
+		res.json({
+			results: movies,
+		});
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: "Failed to fetch recent movies" });
+	}
+}
