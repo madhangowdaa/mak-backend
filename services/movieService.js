@@ -150,6 +150,7 @@ export async function getMoviesService({
 		genres: m.genres || [],
 		fileLink: m.fileLink,
 		pinned: m.pinned || false,
+		clicks:m.clicks || 0,
 	}));
 
 	return {
@@ -182,5 +183,25 @@ export async function getRecentMoviesService(limit = 10) {
 		fileLink: m.fileLink,
 		pinned: m.pinned || false,
 		createdAt: m.createdAt,
+		clicks:m.clicks || 0,
 	}));
+}
+
+
+/* ================= INCREMENT COUNT ON MOVIES ================= */
+
+export async function incrementMovieClicksService(tmdbID) {
+	const db = await getDb();
+	const movies = db.collection('movies');
+
+	const movie = await movies.findOne({ tmdbID });
+	if (!movie) throw new Error('Movie not found');
+
+	const updated = await movies.findOneAndUpdate(
+		{ tmdbID },
+		{ $inc: { clicks: 1 } }, // increment clicks by 1
+		{ returnDocument: 'after' } // return updated document
+	);
+
+	return updated.value; // contains updated clicks
 }
