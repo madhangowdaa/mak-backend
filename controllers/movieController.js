@@ -6,6 +6,7 @@ import {
 	getMoviesService,
 	getRecentMoviesService,
 	incrementMovieClicksService,
+	getTopKannadaMoviesService,
 } from '../services/movieService.js';
 
 
@@ -94,4 +95,19 @@ export async function handleClickController(req, res) {
 	}
 }
 
+//Top 10 movies based on views 
+export async function getTopKannadaMoviesController(req, res) {
+	try {
+		const { limit = 10 } = req.query;
+
+		const movies = await getTopKannadaMoviesService(Number(limit));
+
+		res.json({
+			results: movies,
+		});
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: "Failed to fetch top Kannada movies" });
+	}
+}
 
