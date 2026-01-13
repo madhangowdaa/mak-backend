@@ -158,3 +158,29 @@ export async function getMoviesService({
 		currentPage: page,
 	};
 }
+
+/* ================= RECENT MOVIES ================= */
+
+export async function getRecentMoviesService(limit = 10) {
+	const db = await getDb();
+	const movies = db.collection("movies");
+
+	const results = await movies
+		.find({})
+		.sort({ createdAt: -1 }) // 🔥 ONLY by creation time
+		.limit(limit)
+		.toArray();
+
+	return results.map((m) => ({
+		id: m.tmdbID,
+		tmdbID: m.tmdbID,
+		title: m.title,
+		overview: m.overview,
+		poster_path: m.poster_path,
+		release_date: m.release_date,
+		genres: m.genres || [],
+		fileLink: m.fileLink,
+		pinned: m.pinned || false,
+		createdAt: m.createdAt,
+	}));
+}
