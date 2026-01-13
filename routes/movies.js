@@ -6,13 +6,18 @@ import {
 	deleteMovieController,
 	getAllMoviesController,
 	getRecentMoviesController,
+	handleClickController,
 } from '../controllers/movieController.js';
 
-import { verifyAdmin } from '../middleware/auth.js';
+import { verifyAdmin } from '../middleware/auth.js'
+
+// Add this **after your other routes**
+
 
 const router = express.Router();
 router.get('/movies/recent', getRecentMoviesController);
 router.get('/movies', getAllMoviesController); // query params: ?page=1&limit=20&q=batman&sort=latest
+router.post('/click/:tmdbID', handleClickController);
 router.post('/addMovie', verifyAdmin, addMovieController);
 router.put('/updateMovie', verifyAdmin, updateMovieController);
 router.delete('/deleteMovie', verifyAdmin, deleteMovieController);
