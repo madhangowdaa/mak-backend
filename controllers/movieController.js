@@ -5,6 +5,7 @@ import {
 	deleteMovieService,
 	getMoviesService,
 	getRecentMoviesService,
+	incrementMovieClicksService,
 } from '../services/movieService.js';
 
 
@@ -78,3 +79,19 @@ export async function getRecentMoviesController(req, res) {
 		res.status(500).json({ error: "Failed to fetch recent movies" });
 	}
 }
+
+export async function handleClickController(req, res) {
+	try {
+		const tmdbID = Number(req.params.tmdbID);
+		if (!tmdbID) return res.status(400).json({ error: 'TMDb ID required' });
+
+		const updatedMovie = await incrementMovieClicksService(tmdbID);
+
+		res.json({ clicks: updatedMovie.clicks });
+	} catch (error) {
+		console.error('Click Error:', error);
+		res.status(500).json({ error: error.message });
+	}
+}
+
+
