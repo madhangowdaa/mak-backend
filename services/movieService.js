@@ -1,3 +1,4 @@
+// services/movieService.js
 import fetch from "node-fetch";
 import { getDb } from "../db.js";
 
@@ -204,4 +205,32 @@ export async function incrementMovieClicksService(tmdbID) {
 	);
 
 	return updated.value; // contains updated clicks
+}
+
+/* ================= TOP KANNADA MOVIES ================= */
+
+export async function getTopKannadaMoviesService(limit = 10) {
+	const db = await getDb();
+	const movies = db.collection("movies");
+
+	// Filter Kannada movies (language code "kn") and sort by order or clicks
+	const results = await movies
+		.find({ original_language: "kn" }) // make sure your data has this field
+		.sort({ clicks: -1, createdAt: -1 }) // top clicked first, then latest
+		.limit(limit)
+		.toArray();
+
+	return results.map((m) => ({
+		id: m.tmdbID,
+		tmdbID: m.tmdbID,
+		title: m.title,
+		overview: m.overview,
+		poster_path: m.poster_path,
+		release_date: m.release_date,
+		genres: m.genres || [],
+		fileLink: m.fileLink,
+		pinned: m.pinned || false,
+		createdAt: m.createdAt,
+		clicks: m.clicks || 0,
+	}));
 }
