@@ -49,8 +49,10 @@ export async function setTrendingMovieService(tmdbID, trendingOrder = null) {
         { $set: { trending: trendingData, updatedAt: new Date() } }
     );
 
-    return { tmdbID, ...trendingData };
+    // Return full movie info
+    return { ...movie, trending: trendingData };
 }
+
 
 /* ================= REMOVE FROM TRENDING ================= */
 export async function removeTrendingMovieService(tmdbID) {
@@ -64,6 +66,6 @@ export async function removeTrendingMovieService(tmdbID) {
         { tmdbID },
         { $set: { trending: { isTrending: false, trendingOrder: null }, updatedAt: new Date() } }
     );
-
-    return { tmdbID, trending: { isTrending: false, trendingOrder: null } };
+    // Return full movie info
+    return { ...movie, trending: trendingData };
 }
