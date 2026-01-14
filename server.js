@@ -7,6 +7,8 @@ import tmdbRouter from "./routes/tmdb.js";
 import tmdbRoutes from "./routes/tmdbRoutes.js";
 import carouselRoutes from "./routes/carouselRoutes.js";
 import top10Routes from "./routes/top10.js";
+import trendingRoutes from "./routes/trending.js";
+
 
 dotenv.config();
 
@@ -22,5 +24,6 @@ app.use("/api/populartmdb", tmdbRoutes);
 app.use("/api/carousel", carouselRoutes);
 app.use("/uploads", express.static("uploads")); // serve uploaded images
 app.use("/api", top10Routes);
+app.use('/api', trendingRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
