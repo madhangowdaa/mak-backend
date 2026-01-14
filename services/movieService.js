@@ -49,14 +49,18 @@ export async function addMovieService(tmdbID, fileLink, options = {}) {
 		order = last.length ? last[0].order + 1 : 0;
 	}
 
+	const trending = options.trending || { isTrending: false, trendingOrder: 0 };
+
 	const movie = {
 		...data,
 		tmdbID,
 		fileLink,
 		pinned,
 		order,
+		trending,
 		createdAt: new Date(),
 	};
+
 
 	await movies.insertOne(movie);
 	return movie;
@@ -94,8 +98,10 @@ export async function updateMovieService(tmdbID, fileLink, options = {}) {
 				? options.pinned
 				: existing.pinned,
 		order,
+		trending: options.trending || existing.trending || { isTrending: false, trendingOrder: 0 },
 		updatedAt: new Date(),
 	};
+
 
 	await movies.updateOne({ tmdbID }, { $set: updated });
 	return updated;
@@ -152,6 +158,7 @@ export async function getMoviesService({
 		fileLink: m.fileLink,
 		pinned: m.pinned || false,
 		clicks:m.clicks || 0,
+		trending:m.trending ||{},
 	}));
 
 	return {
@@ -185,6 +192,7 @@ export async function getRecentMoviesService(limit = 10) {
 		pinned: m.pinned || false,
 		createdAt: m.createdAt,
 		clicks:m.clicks || 0,
+		trending: m.trending || {},
 	}));
 }
 
@@ -232,5 +240,31 @@ export async function getTopKannadaMoviesService(limit = 10) {
 		pinned: m.pinned || false,
 		createdAt: m.createdAt,
 		clicks: m.clicks || 0,
+	}));
+}
+
+/* ================= TRENDING MOVIES ================= */
+
+export async function getTrendingMoviesService(limit = 10) {
+	const db = await getDb();
+	const movies = db.collection("movies");
+
+	const results = await movies
+		.find({ "trending.isTrending": true })
+		.sort({ "trending.trendingOrder": 1 }) // lower order = higher priority
+		.limit(limit)
+		.toArray();
+
+	return results.map(m => ({
+		id: m.tmdbID,
+		tmdbID: m.tmdbID,
+		title: m.title,
+		overview: m.overview,
+		poster_path: m.poster_path,
+		release_date: m.release_date,
+		genres: m.genres || [],
+		fileLink: m.fileLink,
+		pinned: m.pinned || false,
+		trending: m.trending || {},
 	}));
 }
