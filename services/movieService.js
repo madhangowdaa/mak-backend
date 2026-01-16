@@ -58,6 +58,7 @@ export async function addMovieService(tmdbID, fileLink, options = {}) {
 		pinned,
 		order,
 		trending,
+		clicks:0,
 		createdAt: new Date(),
 	};
 
