@@ -8,7 +8,7 @@ import tmdbRoutes from "./routes/tmdbRoutes.js";
 import carouselRoutes from "./routes/carouselRoutes.js";
 import top10Routes from "./routes/top10.js";
 import trendingRoutes from "./routes/trending.js";
-
+import genreRoutes from "./routes/genres.js";
 
 dotenv.config();
 
@@ -17,7 +17,9 @@ app.use(cors());
 app.use(express.json());
 
 
+app.use("/api", genreRoutes);
 app.use('/api', moviesRouter);
+app.use("/api/geners",genreRoutes);
 app.use('/api/series', seriesRouter);
 app.use("/api/tmdb", tmdbRouter);
 app.use("/api/populartmdb", tmdbRoutes);
