@@ -26,11 +26,12 @@ export async function setUpcomingMovieController(req, res) {
             return res.status(400).json({ error: "tmdbID is required" });
         }
 
-        const movie = await setUpcomingMovieService(
-            Number(tmdbID),
-            upcomingOrder,
-            ott_release
-        );
+        // Pass a single object to match new service
+        const movie = await setUpcomingMovieService({
+            tmdbID: Number(tmdbID),
+            upcomingOrder: upcomingOrder ?? 999,
+            ott_release: ott_release ?? null
+        });
 
         res.json({ message: "✅ Movie added to upcoming", movie });
     } catch (err) {
@@ -55,3 +56,4 @@ export async function removeUpcomingMovieController(req, res) {
         res.status(500).json({ error: err.message });
     }
 }
+
