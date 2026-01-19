@@ -1,90 +1,79 @@
-// services\upcomingService.js
 import { getDb } from "../db.js";
+import axios from "axios";
 
-/* ================= GET UPCOMING MOVIES ================= */
-export async function getUpcomingMoviesService(limit = 10) {
-    const db = await getDb();
-    const movies = db.collection("movies");
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
+const TMDB_API_BASE = "https://api.themoviedb.org/3/movie";
 
-    const results = await movies
-        .find({ "upcoming.isUpcoming": true })
-        .sort({
-            "upcoming.upcomingOrder": 1,
-            "upcoming.ott_release": 1,
-            updatedAt: -1
-        })
-        .limit(limit)
-        .toArray();
-
-    return results.map(m => ({
-        tmdbID: m.tmdbID,
-        title: m.title,
-        overview: m.overview,
-        poster_path: m.poster_path,
-        release_date: m.release_date,
-        genres: m.genres || [],
-        fileLink: m.fileLink,
-        pinned: m.pinned || false,
-        clicks: m.clicks || 0,
-        trending: m.trending || { isTrending: false, trendingOrder: null },
-        upcoming: m.upcoming
-    }));
+async function fetchTMDBMovie(tmdbID) {
+    const res = await axios.get(`${TMDB_API_BASE}/${tmdbID}`, {
+        params: { api_key: TMDB_API_KEY }
+    });
+    const data = res.data;
+    return {
+        title: data.title,
+        overview: data.overview,
+        poster_path: data.poster_path,
+        genres: data.genres?.map(g => g.name) || [],
+        language: data.original_language
+    };
 }
 
-/* ================= ADD / UPDATE UPCOMING ================= */
-export async function setUpcomingMovieService(
-    tmdbID,
-    upcomingOrder = 999,
-    ott_release = null
-) {
+// Add / update upcoming
+export async function setUpcomingMovieService({ tmdbID, ott_release = null, upcomingOrder = 999 }) {
     const db = await getDb();
-    const movies = db.collection("movies");
+    const upcomingCol = db.collection("upcoming");
 
-    const upcomingData = {
-        isUpcoming: true,
-        upcomingOrder,
-        ott_release: ott_release ? new Date(ott_release) : null
+    // Fetch TMDB info
+    const tmdbData = await fetchTMDBMovie(tmdbID);
+    if (!tmdbData) throw new Error("Failed to fetch movie details from TMDB");
+
+    const doc = {
+        tmdbID: Number(tmdbID),
+        upcoming: {
+            isUpcoming: true,
+            upcomingOrder,
+            ott_release: ott_release ? new Date(ott_release) : null
+        },
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...tmdbData
     };
 
-    await movies.updateOne(
-        { tmdbID },
-        {
-            $set: {
-                tmdbID,
-                upcoming: upcomingData,
-                updatedAt: new Date()
-            },
-            $setOnInsert: {
-                createdAt: new Date(),
-                clicks: 0,
-                pinned: false,
-                trending: { isTrending: false, trendingOrder: null }
-            }
-        },
-        { upsert: true } // ✅ movie not required to exist
+    await upcomingCol.updateOne(
+        { tmdbID: Number(tmdbID) },
+        { $set: doc, $setOnInsert: { createdAt: new Date() } },
+        { upsert: true }
     );
 
-    return { tmdbID, upcoming: upcomingData };
+    return doc;
 }
 
-/* ================= REMOVE FROM UPCOMING ================= */
+// Remove upcoming
 export async function removeUpcomingMovieService(tmdbID) {
     const db = await getDb();
-    const movies = db.collection("movies");
+    const upcomingCol = db.collection("upcoming");
 
-    await movies.updateOne(
-        { tmdbID },
-        {
-            $set: {
-                upcoming: {
-                    isUpcoming: false,
-                    upcomingOrder: null,
-                    ott_release: null
-                },
-                updatedAt: new Date()
-            }
-        }
-    );
+    const update = {
+        "upcoming.isUpcoming": false,
+        "upcoming.upcomingOrder": null,
+        "upcoming.ott_release": null,
+        updatedAt: new Date()
+    };
+
+    await upcomingCol.updateOne({ tmdbID: Number(tmdbID) }, { $set: update });
 
     return { tmdbID };
+}
+
+// Get upcoming movies
+export async function getUpcomingMoviesService(limit = 10) {
+    const db = await getDb();
+    const upcomingCol = db.collection("upcoming");
+
+    return await upcomingCol
+        .find({ "upcoming.isUpcoming": true })
+        .sort({ "upcoming.upcomingOrder": 1, "upcoming.ott_release": 1, updatedAt: -1 })
+        .limit(limit)
+        .toArray();
 }
