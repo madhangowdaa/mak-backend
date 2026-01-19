@@ -9,7 +9,7 @@ import { verifyAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Get trending movies
+// Get upcoming movies
 router.get("/movies/upcoming", getUpcomingMoviesController);
 
 // Admin routes
