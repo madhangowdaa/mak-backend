@@ -59,7 +59,6 @@ export async function addMovieService(tmdbID, fileLink, options = {}) {
 		order,
 		trending,
 		clicks:0,
-		upcoming,
 		createdAt: new Date(),
 	};
 
@@ -101,7 +100,6 @@ export async function updateMovieService(tmdbID, fileLink, options = {}) {
 				: existing.pinned,
 		order,
 		trending: options.trending || existing.trending || { isTrending: false, trendingOrder: 0 },
-		upcoming: options.upcoming || existing.upcoming || { isUpcoming: false, upcomingOrder:0,ott_release:null},
 		updatedAt: new Date(),
 	};
 
@@ -162,7 +160,6 @@ export async function getMoviesService({
 		pinned: m.pinned || false,
 		clicks:m.clicks || 0,
 		trending:m.trending ||{},
-		upcoming:m.upcoming ||{},
 	}));
 
 	return {
@@ -197,7 +194,6 @@ export async function getRecentMoviesService(limit = 10) {
 		createdAt: m.createdAt,
 		clicks:m.clicks || 0,
 		trending: m.trending || {},
-		upcoming: m.upcoming || {},
 	}));
 }
 
@@ -245,7 +241,6 @@ export async function getTopKannadaMoviesService(limit = 10) {
 		pinned: m.pinned || false,
 		createdAt: m.createdAt,
 		clicks: m.clicks || 0,
-		upcoming: m.upcoming || {},
 	}));
 }
 
@@ -272,6 +267,5 @@ export async function getTrendingMoviesService(limit = 10) {
 		fileLink: m.fileLink,
 		pinned: m.pinned || false,
 		trending: m.trending || {},
-		upcoming: m.upcoming || {},
 	}));
 }
