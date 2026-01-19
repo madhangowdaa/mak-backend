@@ -5,6 +5,7 @@ import {
     removeUpcomingMovieService
 } from "../services/upcomingService.js";
 
+/* ================= GET UPCOMING MOVIES ================= */
 export async function getUpcomingMoviesController(req, res) {
     try {
         const { limit = 10 } = req.query;
@@ -16,26 +17,39 @@ export async function getUpcomingMoviesController(req, res) {
     }
 }
 
+/* ================= ADD / UPDATE UPCOMING ================= */
 export async function setUpcomingMovieController(req, res) {
     try {
-        const { tmdbID, upcomingOrder } = req.body;
-        if (!tmdbID) return res.status(400).json({ error: "tmdbID is required" });
+        const { tmdbID, upcomingOrder, ott_release } = req.body;
 
-        const movie = await setUpcomingMovieService(Number(tmdbID), upcomingOrder);
-        res.json({ message: "✅ Movie added to trending", movie });
+        if (!tmdbID) {
+            return res.status(400).json({ error: "tmdbID is required" });
+        }
+
+        const movie = await setUpcomingMovieService(
+            Number(tmdbID),
+            upcomingOrder,
+            ott_release
+        );
+
+        res.json({ message: "✅ Movie added to upcoming", movie });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });
     }
 }
 
+/* ================= REMOVE UPCOMING ================= */
 export async function removeUpcomingMovieController(req, res) {
     try {
         const { tmdbID } = req.body;
-        if (!tmdbID) return res.status(400).json({ error: "tmdbID is required" });
+
+        if (!tmdbID) {
+            return res.status(400).json({ error: "tmdbID is required" });
+        }
 
         const movie = await removeUpcomingMovieService(Number(tmdbID));
-        res.json({ message: "🗑️ Movie removed from trending", movie });
+        res.json({ message: "🗑️ Movie removed from upcoming", movie });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });
