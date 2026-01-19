@@ -1,30 +1,32 @@
+import fetch from "node-fetch";
 import { getDb } from "../db.js";
-import axios from "axios";
 
-const TMDB_API_KEY = process.env.TMDB_API_KEY;
-const TMDB_API_BASE = "https://api.themoviedb.org/3/movie";
+const TMDB_API = process.env.TMDB_API_KEY;
 
-async function fetchTMDBMovie(tmdbID) {
-    const res = await axios.get(`${TMDB_API_BASE}/${tmdbID}`, {
-        params: { api_key: TMDB_API_KEY }
-    });
-    const data = res.data;
+/* ================= TMDB FETCH ================= */
+
+async function fetchTMDB(tmdbID) {
+    const res = await fetch(
+        `https://api.themoviedb.org/3/movie/${tmdbID}?api_key=${TMDB_API}`
+    );
+    if (!res.ok) throw new Error("Failed to fetch TMDb data");
+
+    const data = await res.json();
     return {
         title: data.title,
         overview: data.overview,
         poster_path: data.poster_path,
-        genres: data.genres?.map(g => g.name) || [],
-        language: data.original_language
+        release_date: data.release_date,
+        genres: data.genres?.map((g) => g.name) || [],
     };
 }
-
 // Add / update upcoming
 export async function setUpcomingMovieService({ tmdbID, ott_release = null, upcomingOrder = 999 }) {
     const db = await getDb();
     const upcomingCol = db.collection("upcoming");
 
     // Fetch TMDB info
-    const tmdbData = await fetchTMDBMovie(tmdbID);
+    const tmdbData = await fetchTMDB(tmdbID);
     if (!tmdbData) throw new Error("Failed to fetch movie details from TMDB");
 
     const doc = {
