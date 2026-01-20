@@ -12,6 +12,7 @@ import genreRoutes from "./routes/genres.js";
 import upcomingRoutes from "./routes/upcoming.js";
 import statsRotes from "./routes/stats.js";
 import searchRoutes from "./routes/search.js";
+import hdtvRoutes from "./routes/hdtv.js";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use("/api", hdtvRoutes);
 app.use("/api", searchRoutes);
 app.use("/api", genreRoutes);
 app.use('/api', moviesRouter);
