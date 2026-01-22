@@ -68,11 +68,21 @@ export async function updateHDTVService(id, payload) {
     if (!existing) throw new Error("HDTV not found");
 
     let data = {};
-    if (payload.tmdbID && !existing.isCustom) {
+
+    // Upgrade custom → TMDB
+    if (payload.tmdbID) {
         data = await fetchTMDB(payload.tmdbID);
+        data.tmdbID = payload.tmdbID;
+        data.isCustom = false;
     }
+
+    // Custom update
     if (payload.customData) {
-        data = payload.customData;
+        data = {
+            ...payload.customData,
+            tmdbID: null,
+            isCustom: true
+        };
     }
 
     const updated = {
@@ -89,6 +99,35 @@ export async function updateHDTVService(id, payload) {
 
     return { ...existing, ...updated };
 }
+// export async function updateHDTVService(id, payload) {
+//     const db = await getDb();
+//     const hdtv = db.collection("hdtv");
+
+//     const existing = await hdtv.findOne({ _id: new ObjectId(id) });
+//     if (!existing) throw new Error("HDTV not found");
+
+//     let data = {};
+//     if (payload.tmdbID && !existing.isCustom) {
+//         data = await fetchTMDB(payload.tmdbID);
+//     }
+//     if (payload.customData) {
+//         data = payload.customData;
+//     }
+
+//     const updated = {
+//         ...data,
+//         fileLink: payload.fileLink ?? existing.fileLink,
+//         pinned: payload.pinned ?? existing.pinned,
+//         updatedAt: new Date()
+//     };
+
+//     await hdtv.updateOne(
+//         { _id: new ObjectId(id) },
+//         { $set: updated }
+//     );
+
+//     return { ...existing, ...updated };
+// }
 
 /* ===== DELETE ===== */
 export async function deleteHDTVService(id) {
