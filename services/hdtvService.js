@@ -13,10 +13,10 @@ async function fetchTMDB(tmdbID) {
 
     const d = await res.json();
     return {
-        title: d.name,
+        title: d.title,
         overview: d.overview,
         poster_path: d.poster_path,
-        release_date: d.first_air_date,
+        release_date: d.release_date,
         genres: d.genres?.map(g => g.name) || []
     };
 }
