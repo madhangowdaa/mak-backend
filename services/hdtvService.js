@@ -7,7 +7,7 @@ const TMDB_API = process.env.TMDB_API_KEY;
 /* ===== TMDB ===== */
 async function fetchTMDB(tmdbID) {
     const res = await fetch(
-        `https://api.themoviedb.org/3/tv/${tmdbID}?api_key=${TMDB_API}`
+        `https://api.themoviedb.org/3/movie/${tmdbID}?api_key=${TMDB_API}`
     );
     if (!res.ok) throw new Error("TMDB fetch failed");
 
