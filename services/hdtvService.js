@@ -37,30 +37,32 @@ export async function addHDTVService(payload) {
 
 	let data;
 
+	// 1. Resolve Data and Check ID duplicates
 	if (tmdbID) {
 		const exists = await hdtv.findOne({ tmdbID });
-		if (exists) throw new Error('TMDB item already exists');
+		if (exists) throw new Error('TMDB item already exists by ID');
 		data = await fetchTMDB(tmdbID);
 	} else if (customData) {
-		const exists = await hdtv.findOne({
-			isCustom: true,
-			title: new RegExp(`^${customData.title}$`, 'i'),
-		});
-		if (exists) throw new Error('Custom item already exists');
 		data = customData;
 	} else {
 		throw new Error('tmdbID or customData required');
 	}
 
-	// 🔥 ORDER LOGIC (same as Movies)
-	let order = 0;
+	// 2. UNIVERSAL TITLE CHECK (Fixes your logic issue)
+	// This prevents adding TMDB if Custom exists, and Custom if TMDB exists
+	const titleExists = await hdtv.findOne({
+		title: new RegExp(`^${data.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+	});
+	if (titleExists) throw new Error('A movie with this title already exists');
 
+	// 🔥 ORDER LOGIC
+	let order = 0;
 	if (position === 'f') {
 		const first = await hdtv.find().sort({ order: 1 }).limit(1).toArray();
-		order = first.length ? first[0].order - 1 : 0;
+		order = (first.length && first[0].order !== undefined) ? first[0].order - 1 : 0;
 	} else {
 		const last = await hdtv.find().sort({ order: -1 }).limit(1).toArray();
-		order = last.length ? last[0].order + 1 : 0;
+		order = (last.length && last[0].order !== undefined) ? last[0].order + 1 : 0;
 	}
 
 	const show = {
@@ -77,6 +79,7 @@ export async function addHDTVService(payload) {
 	const result = await hdtv.insertOne(show);
 	return { _id: result.insertedId, ...show };
 }
+
 
 // export async function addHDTVService(payload) {
 //     const db = await getDb();
