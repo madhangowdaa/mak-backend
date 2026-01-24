@@ -6,16 +6,19 @@ export async function getFooterStatsService() {
 
     const moviesCollection = db.collection("movies");
     const seriesCollection = db.collection("series");
+    const hdtvCollection = db.collection("hdtv");
 
     // Count documents
-    const [totalMovies, totalSeries] = await Promise.all([
+    const [totalMovies, totalSeries, totalHdtvRips] = await Promise.all([
         moviesCollection.countDocuments(),
-        seriesCollection.countDocuments()
+        seriesCollection.countDocuments(),
+        hdtvCollection.countDocuments()
     ]);
 
     return {
         totalMovies,
         totalSeries,
-        totalTitles: totalMovies + totalSeries
+        totalHdtvRips,
+        totalTitles: totalMovies + totalSeries + totalHdtvRips
     };
 }
