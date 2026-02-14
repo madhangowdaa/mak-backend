@@ -14,6 +14,7 @@ import upcomingRoutes from "./routes/upcoming.js";
 import statsRotes from "./routes/stats.js";
 import searchRoutes from "./routes/search.js";
 import hdtvRoutes from "./routes/hdtv.js";
+import backupRoutes from './routes/backup.js';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use("/api", top10Routes);
 app.use('/api', trendingRoutes);
 app.use('/api', upcomingRoutes);
 app.use('/api',statsRotes);
+app.use('/api', backupRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
