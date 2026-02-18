@@ -22,6 +22,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Static files
+app.use(express.static("public"));
+
 app.use("/api", hdtvRoutes);
 app.use("/api", searchRoutes);
 app.use("/api", genreRoutes);
