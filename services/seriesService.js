@@ -67,6 +67,7 @@ export async function addSeriesService(seriesData, options = {}) {
         seasons,
         pinned,
         order,
+        clicks: 0, 
         createdAt: new Date(),
     };
 
@@ -182,4 +183,23 @@ async function fetchTMDBSeries(tmdbID) {
         release_date: data.first_air_date,
         genres: data.genres?.map(g => g.name) || [],
     };
+}
+
+
+// ---------------- Increment Series Clicks ----------------
+export async function incrementSeriesClicksService(tmdbID) {
+    const db = await getDb();
+    const collection = db.collection("series");
+
+    const updated = await collection.findOneAndUpdate(
+        { tmdbID: Number(tmdbID) }, // ensure number match
+        { $inc: { clicks: 1 } },     // atomic increment
+        { returnDocument: "after" }  // return updated document
+    );
+
+    if (!updated.value) {
+        throw new Error("Series not found");
+    }
+
+    return updated.value; // contains updated clicks
 }
