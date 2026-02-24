@@ -19,6 +19,7 @@ async function fetchTMDB(tmdbID) {
 		poster_path: d.poster_path,
 		release_date: d.release_date,
 		genres: d.genres?.map((g) => g.name) || [],
+		rating: d.vote_average || 0,
 	};
 }
 
@@ -73,6 +74,7 @@ export async function addHDTVService(payload) {
 		pinned,
 		order,
 		clicks: 0,
+		rating: data.rating ?? 0,
 		createdAt: new Date(),
 	};
 
@@ -244,13 +246,23 @@ export async function incrementHDTVClicksService(id) {
 	const db = await getDb();
 	const hdtv = db.collection('hdtv');
 
+	if (!ObjectId.isValid(id)) {
+		throw new Error('Invalid HDTV ID');
+	}
+
 	const updated = await hdtv.findOneAndUpdate(
 		{ _id: new ObjectId(id) },
 		{ $inc: { clicks: 1 } },
-		{ returnDocument: 'after' },
+		{
+			returnDocument: 'after',
+			upsert: false,
+		}
 	);
 
-	if (!updated.value) throw new Error('HDTV not found');
+	if (!updated.value) {
+		throw new Error('HDTV not found');
+	}
+
 	return updated.value;
 }
 
