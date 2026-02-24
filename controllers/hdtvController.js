@@ -36,13 +36,35 @@ export async function deleteHDTVController(req, res) {
 }
 
 export async function getAllHDTVController(req, res) {
-    const data = await getHDTVService(req.query);
-    res.json(data);
+    try {
+        const data = await getHDTVService(req.query);
+        res.status(200).json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 }
 
 export async function handleHDTVClickController(req, res) {
-    const show = await incrementHDTVClicksService(req.params.id);
-    res.json({ clicks: show.clicks });
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({ error: 'HDTV ID required' });
+        }
+
+        const show = await incrementHDTVClicksService(id);
+
+        res.status(200).json({
+            success: true,
+            clicks: show.clicks,
+        });
+
+    } catch (err) {
+        res.status(400).json({
+            success: false,
+            error: err.message,
+        });
+    }
 }
 
 // Search for HDTV by title
