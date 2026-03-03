@@ -34,8 +34,21 @@ export async function getSeriesService({
 		.limit(limit)
 		.toArray();
 
+	const sanitized = results.map(series => ({
+		...series,
+		seasons: series.seasons.map(season => ({
+			seasonNumber: season.seasonNumber,
+			language: season.language,
+			languageName: season.languageName,
+			versions: season.versions.map(v => ({
+				quality: v.quality
+				// ❌ remove fileLink
+			}))
+		}))
+	}));
 	const totalPages = Math.ceil(totalSeries / limit);
-	return { results, totalPages, currentPage: page };
+	// return { results, totalPages, currentPage: page };
+	return { results: sanitized, totalPages, currentPage: page };
 }
 
 // ---------------- Add Series ----------------
@@ -219,4 +232,36 @@ export async function incrementSeriesClicksService(tmdbID) {
 	}
 
 	return updated.value; // contains updated clicks
+}
+
+
+/* ================= SECURE SERIES DOWNLOAD ================= */
+
+export async function getSeriesDownloadLinkService(
+	tmdbID,
+	seasonNumber,
+	language,
+	quality
+) {
+	const db = await getDb();
+	const collection = db.collection("series");
+
+	const series = await collection.findOne({ tmdbID: Number(tmdbID) });
+	if (!series) throw new Error("Series not found");
+
+	const season = series.seasons.find(
+		(s) =>
+			s.seasonNumber === Number(seasonNumber) &&
+			s.language === language
+	);
+
+	if (!season) throw new Error("Season not found");
+
+	const version = season.versions.find(
+		(v) => v.quality === quality
+	);
+
+	if (!version) throw new Error("Quality not found");
+
+	return version.fileLink;
 }
