@@ -7,6 +7,7 @@ import {
 	getRecentMoviesService,
 	incrementMovieClicksService,
 	getTopKannadaMoviesService,
+	getMovieDownloadLinkService,
 } from '../services/movieService.js';
 
 
@@ -111,3 +112,22 @@ export async function getTopKannadaMoviesController(req, res) {
 	}
 }
 
+export async function getMovieDownloadController(req, res) {
+	try {
+		const tmdbID = Number(req.params.tmdbID);
+		if (!tmdbID) return res.status(400).json({ error: "TMDb ID required" });
+
+		// Basic anti-bot check
+		const userAgent = req.headers["user-agent"];
+		if (!userAgent || userAgent.includes("bot")) {
+			return res.status(403).json({ error: "Bots not allowed" });
+		}
+
+		const link = await getMovieDownloadLinkService(tmdbID);
+
+		res.json({ link });
+	} catch (error) {
+		console.error("Download Error:", error);
+		res.status(500).json({ error: error.message });
+	}
+}
