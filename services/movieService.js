@@ -156,7 +156,7 @@ export async function getMoviesService({
 		poster_path: m.poster_path,
 		release_date: m.release_date,
 		genres: m.genres || [],
-		fileLink: m.fileLink,
+		// fileLink: m.fileLink,
 		pinned: m.pinned || false,
 		clicks:m.clicks || 0,
 		trending:m.trending ||{},
@@ -189,7 +189,7 @@ export async function getRecentMoviesService(limit = 10) {
 		poster_path: m.poster_path,
 		release_date: m.release_date,
 		genres: m.genres || [],
-		fileLink: m.fileLink,
+		// fileLink: m.fileLink,
 		pinned: m.pinned || false,
 		createdAt: m.createdAt,
 		clicks:m.clicks || 0,
@@ -237,7 +237,7 @@ export async function getTopKannadaMoviesService(limit = 10) {
 		poster_path: m.poster_path,
 		release_date: m.release_date,
 		genres: m.genres || [],
-		fileLink: m.fileLink,
+		// fileLink: m.fileLink,
 		pinned: m.pinned || false,
 		createdAt: m.createdAt,
 		clicks: m.clicks || 0,
@@ -264,8 +264,22 @@ export async function getTrendingMoviesService(limit = 10) {
 		poster_path: m.poster_path,
 		release_date: m.release_date,
 		genres: m.genres || [],
-		fileLink: m.fileLink,
+		// fileLink: m.fileLink,
 		pinned: m.pinned || false,
 		trending: m.trending || {},
 	}));
+}
+
+
+/* ================= SECURE DOWNLOAD ================= */
+
+export async function getMovieDownloadLinkService(tmdbID) {
+	const db = await getDb();
+	const movies = db.collection("movies");
+
+	const movie = await movies.findOne({ tmdbID });
+
+	if (!movie) throw new Error("Movie not found");
+
+	return movie.fileLink; // Telegram link stored privately
 }
