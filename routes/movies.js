@@ -8,6 +8,7 @@ import {
 	getRecentMoviesController,
 	handleClickController,
 	getTopKannadaMoviesController,
+	getMovieDownloadController,
 } from '../controllers/movieController.js';
 
 import { verifyAdmin } from '../middleware/auth.js'
@@ -23,6 +24,7 @@ router.post('/click/:tmdbID', handleClickController);
 router.post('/addMovie', verifyAdmin, addMovieController);
 router.put('/updateMovie', verifyAdmin, updateMovieController);
 router.delete('/deleteMovie', verifyAdmin, deleteMovieController);
+router.get('/movies/download/:tmdbID', getMovieDownloadController);
 
 export default router;
 
