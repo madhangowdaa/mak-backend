@@ -5,6 +5,7 @@ import {
     updateSeriesService,
     deleteSeriesService,
     incrementSeriesClicksService,
+    getSeriesDownloadLinkService,
 } from '../services/seriesService.js';
 import { verifyAdmin } from '../middleware/auth.js';
 
@@ -77,6 +78,30 @@ export async function handleSeriesClickController(req, res) {
 
     } catch (error) {
         console.error("Series Click Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
+
+export async function getSeriesDownloadController(req, res) {
+    try {
+        const { tmdbID, season, language, quality } = req.params;
+
+        const userAgent = req.headers["user-agent"];
+        if (!userAgent || userAgent.includes("bot")) {
+            return res.status(403).json({ error: "Bots not allowed" });
+        }
+
+        const link = await getSeriesDownloadLinkService(
+            tmdbID,
+            season,
+            language,
+            quality
+        );
+
+        res.json({ link });
+    } catch (error) {
+        console.error("Series Download Error:", error);
         res.status(500).json({ error: error.message });
     }
 }
