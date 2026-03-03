@@ -5,7 +5,8 @@ import {
     deleteHDTVService,
     getHDTVService,
     incrementHDTVClicksService,
-    getHDTVByTitleService
+    getHDTVByTitleService,
+    getHDTVByIdService,
 } from "../services/hdtvService.js";
 
 export async function addHDTVController(req, res) {
@@ -76,5 +77,32 @@ export async function getHDTVByTitleController(req, res) {
         res.json({ shows });
     } catch (err) {
         res.status(404).json({ error: err.message });
+    }
+}
+
+export async function getHDTVDownloadLinkController(req, res) {
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({ error: "HDTV ID required" });
+        }
+
+        const show = await getHDTVByIdService(id);
+
+        if (!show) {
+            return res.status(404).json({ error: "HDTV not found" });
+        }
+
+        res.status(200).json({
+            success: true,
+            fileLink: show.fileLink
+        });
+
+    } catch (err) {
+        res.status(400).json({
+            success: false,
+            error: err.message
+        });
     }
 }
