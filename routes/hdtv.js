@@ -6,7 +6,8 @@ import {
     deleteHDTVController,
     getAllHDTVController,
     handleHDTVClickController,
-    getHDTVByTitleController
+    getHDTVByTitleController,
+    getHDTVDownloadLinkController,
 } from "../controllers/hdtvController.js";
 import { verifyAdmin } from "../middleware/auth.js";
 
@@ -18,5 +19,6 @@ router.put("/hdtv/:id", verifyAdmin, updateHDTVController);
 router.delete("/hdtv/:id", verifyAdmin, deleteHDTVController);
 router.post("/hdtv/click/:id", handleHDTVClickController);
 router.get("/hdtv/custom/:title", getHDTVByTitleController); 
+router.get("/hdtv/download/:id", getHDTVDownloadLinkController);
 
 export default router;
