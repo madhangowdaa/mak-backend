@@ -15,6 +15,13 @@ import statsRotes from "./routes/stats.js";
 import searchRoutes from "./routes/search.js";
 import hdtvRoutes from "./routes/hdtv.js";
 import backupRoutes from './routes/backup.js';
+import rateLimit from 'express-rate-limit';
+
+const downloadLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // max 10 requests per minute per IP
+    message: { error: "Too many download attempts" }
+});
 
 dotenv.config();
 
@@ -40,6 +47,7 @@ app.use('/api', trendingRoutes);
 app.use('/api', upcomingRoutes);
 app.use('/api',statsRotes);
 app.use('/api', backupRoutes);
+app.use("/api/movies/download", downloadLimiter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
