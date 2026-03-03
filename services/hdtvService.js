@@ -213,34 +213,54 @@ export async function deleteHDTVService(id) {
 }
 
 /* ===== GET ===== */
+// export async function getHDTVService({ page = 1, limit = 20, q = '' }) {
+// 	const db = await getDb();
+// 	const hdtv = db.collection('hdtv');
+
+// 	const query = q ? { title: { $regex: q, $options: 'i' } } : {};
+// 	const total = await hdtv.countDocuments(query);
+
+// 	// const results = await hdtv
+// 	// 	.find(query)
+// 	// 	.sort({ createdAt: -1 })
+// 	// 	.skip((page - 1) * limit)
+// 	// 	.limit(Number(limit))
+// 	// 	.toArray();
+// 	//Added support for first or last
+// 	const results = await hdtv
+// 		.find(query)
+// 		.sort({ pinned: -1, order: 1 })
+// 		.skip((page - 1) * limit)
+// 		.limit(Number(limit))
+// 		.toArray();
+
+// 	return {
+// 		results,
+// 		totalPages: Math.ceil(total / limit),
+// 		currentPage: Number(page),
+// 	};
+// }
 export async function getHDTVService({ page = 1, limit = 20, q = '' }) {
-	const db = await getDb();
-	const hdtv = db.collection('hdtv');
+  const db = await getDb();
+  const hdtv = db.collection('hdtv');
 
-	const query = q ? { title: { $regex: q, $options: 'i' } } : {};
-	const total = await hdtv.countDocuments(query);
+  const query = q ? { title: { $regex: q, $options: 'i' } } : {};
+  const total = await hdtv.countDocuments(query);
 
-	// const results = await hdtv
-	// 	.find(query)
-	// 	.sort({ createdAt: -1 })
-	// 	.skip((page - 1) * limit)
-	// 	.limit(Number(limit))
-	// 	.toArray();
-	//Added support for first or last
-	const results = await hdtv
-		.find(query)
-		.sort({ pinned: -1, order: 1 })
-		.skip((page - 1) * limit)
-		.limit(Number(limit))
-		.toArray();
+  const results = await hdtv
+    .find(query)
+    .sort({ pinned: -1, order: 1 })
+    .skip((page - 1) * limit)
+    .limit(Number(limit))
+    .project({ fileLink: 0 }) // hide fileLink
+    .toArray();
 
-	return {
-		results,
-		totalPages: Math.ceil(total / limit),
-		currentPage: Number(page),
-	};
+  return {
+    results,
+    totalPages: Math.ceil(total / limit),
+    currentPage: Number(page),
+  };
 }
-
 /* ===== CLICK ===== */
 export async function incrementHDTVClicksService(id) {
 	const db = await getDb();
@@ -267,16 +287,44 @@ export async function incrementHDTVClicksService(id) {
 }
 
 /* ===== GET BY TITLE ===== */
+// export async function getHDTVByTitleService(title) {
+// 	const db = await getDb();
+// 	const hdtv = db.collection('hdtv');
+
+// 	// Perform a case-insensitive search on title field
+// 	const query = { title: { $regex: `^${title}$`, $options: 'i' } };
+
+// 	const results = await hdtv.find(query).toArray();
+
+// 	if (results.length === 0) throw new Error('No matching shows found');
+
+// 	return results;
+// }
+// services/hdtvService.js
 export async function getHDTVByTitleService(title) {
 	const db = await getDb();
 	const hdtv = db.collection('hdtv');
 
-	// Perform a case-insensitive search on title field
 	const query = { title: { $regex: `^${title}$`, $options: 'i' } };
 
-	const results = await hdtv.find(query).toArray();
+	const results = await hdtv.find(query).project({ fileLink: 0 }).toArray(); // hide fileLink
 
 	if (results.length === 0) throw new Error('No matching shows found');
 
 	return results;
+}
+
+export async function getHDTVByIdService(id) {
+	const db = await getDb();
+	const hdtv = db.collection('hdtv');
+
+	if (!ObjectId.isValid(id)) {
+		throw new Error("Invalid HDTV ID");
+	}
+
+	const show = await hdtv.findOne({ _id: new ObjectId(id) });
+
+	if (!show) throw new Error("HDTV not found");
+
+	return show;
 }
