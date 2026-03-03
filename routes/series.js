@@ -5,7 +5,8 @@ import {
     updateSeriesController,
     deleteSeriesController,
     getSeriesController,
-    handleSeriesClickController
+    handleSeriesClickController,
+    getSeriesDownloadController
 } from '../controllers/seriesController.js';
 import { verifyAdmin } from '../middleware/auth.js';
 
@@ -21,5 +22,10 @@ router.post('/click/series/:tmdbID', handleSeriesClickController);
 router.post('/add', verifyAdmin, addSeriesController);
 router.put('/update', verifyAdmin, updateSeriesController);
 router.delete('/delete', verifyAdmin, deleteSeriesController);
+
+router.get(
+    '/download/:tmdbID/:season/:language/:quality',
+    getSeriesDownloadController
+);
 
 export default router;
