@@ -15,6 +15,8 @@ import statsRotes from "./routes/stats.js";
 import searchRoutes from "./routes/search.js";
 import hdtvRoutes from "./routes/hdtv.js";
 import backupRoutes from './routes/backup.js';
+import fourKMovieRoutes from "./routes/4kMovies.js";
+
 import rateLimit from 'express-rate-limit';
 
 const downloadLimiter = rateLimit({
@@ -48,6 +50,7 @@ app.use('/api', upcomingRoutes);
 app.use('/api',statsRotes);
 app.use('/api', backupRoutes);
 app.use("/api/movies/download", downloadLimiter);
+app.use("/api", fourKMovieRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
