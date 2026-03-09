@@ -8,6 +8,7 @@ import {
 	incrementMovieClicksService,
 	getTopKannadaMoviesService,
 	getMovieDownloadLinkService,
+	getMovieUltraLinkService,
 } from '../services/movieService.js';
 
 
@@ -128,6 +129,25 @@ export async function getMovieDownloadController(req, res) {
 		res.json({ link });
 	} catch (error) {
 		console.error("Download Error:", error);
+		res.status(500).json({ error: error.message });
+	}
+}
+
+export async function getMovieUltraDownloadController(req, res) {
+	try {
+		const tmdbID = Number(req.params.tmdbID);
+		if (!tmdbID) return res.status(400).json({ error: "TMDb ID required" });
+
+		const ultra = await getMovieUltraLinkService(tmdbID);
+
+		if (!ultra) {
+			return res.status(404).json({ error: "Ultra version not available" });
+		}
+
+		res.json(ultra);
+
+	} catch (error) {
+		console.error("Ultra Download Error:", error);
 		res.status(500).json({ error: error.message });
 	}
 }
