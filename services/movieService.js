@@ -283,3 +283,31 @@ export async function getMovieDownloadLinkService(tmdbID) {
 
 	return movie.fileLink; // Telegram link stored privately
 }
+
+/* ================= ULTRA LINK ================= */
+
+export async function getMovieUltraLinkService(tmdbID) {
+	const db = await getDb();
+	const movies = db.collection("movies");
+
+	const movie = await movies.findOne({ tmdbID });
+
+	if (!movie) throw new Error("Movie not found");
+
+	return movie.ultraLink || null;
+}
+
+export async function setMovieUltraLinkService(tmdbID, ultraLink) {
+	const db = await getDb();
+	const movies = db.collection("movies");
+
+	const movie = await movies.findOne({ tmdbID });
+	if (!movie) throw new Error("Movie not found");
+
+	await movies.updateOne(
+		{ tmdbID },
+		{ $set: { ultraLink } }
+	);
+
+	return ultraLink;
+}
