@@ -20,10 +20,18 @@ router.get("/movie/:id", async (req, res) => {
         const dbMovie = await db.collection("movies").findOne({ tmdbID: Number(id) });
 
         // 3️⃣ Merge TMDb + DB
+        // const merged = {
+        //     ...tmdbData,
+        //     fileLink: dbMovie?.fileLink || null,
+        //     pinned: dbMovie?.pinned || false,
+        // };
         const merged = {
             ...tmdbData,
-            fileLink: dbMovie?.fileLink || null,
             pinned: dbMovie?.pinned || false,
+            ultraLink: dbMovie?.ultraLink
+                ? { is4K: dbMovie.ultraLink.is4K, size: dbMovie.ultraLink.size }
+                : null,
+            // fileLink: removed
         };
 
         res.json(merged);
