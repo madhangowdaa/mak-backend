@@ -1,5 +1,6 @@
 // controllers\4KController.js
 import { setMovieUltraLinkService, getMovieUltraLinkService } from "../services/movieService.js";
+import { getDb } from "../db.js";
 
 /**
  * Add/Update/Delete ultraLink via admin/bot
