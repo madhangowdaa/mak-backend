@@ -32,6 +32,8 @@ router.get("/movie/:id", async (req, res) => {
                 ? { is4K: dbMovie.ultraLink.is4K, size: dbMovie.ultraLink.size }
                 : null,
             // fileLink: removed
+            hasFiles: Boolean(dbMovie?.fileLink)
+
         };
 
         res.json(merged);
