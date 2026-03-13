@@ -44,44 +44,60 @@ const BASE_URL = "https://api.themoviedb.org/3";
 
 router.get("/movie/:id", async (req, res) => {
     try {
-        const { id } = req.params;
+
+        const tmdbID = Number(req.params.id);
 
         const db = await getDb();
         const cache = db.collection("tmdb_cache");
 
-        // 1️⃣ Check cache
-        const cached = await cache.findOne({ tmdbID: Number(id) });
+        const cached = await cache.findOne({ tmdbID });
 
         let tmdbData;
 
-        if (cached && (Date.now() - new Date(cached.cachedAt).getTime()) < 24 * 60 * 60 * 1000) {
-            // Use cached data
-            tmdbData = cached.data;
+        if (cached) {
+
+            const age = Date.now() - new Date(cached.cachedAt).getTime();
+
+            if (age < 24 * 60 * 60 * 1000) {
+                // fresh cache
+                tmdbData = cached.data;
+
+            } else {
+                // expired cache but still usable
+                tmdbData = cached.data;
+
+                // refresh in background
+                fetch(`${BASE_URL}/movie/${tmdbID}?api_key=${TMDB_API_KEY}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        cache.updateOne(
+                            { tmdbID },
+                            { $set: { data, cachedAt: new Date() } }
+                        );
+                    })
+                    .catch(console.error);
+            }
+
         } else {
-            // Fetch from TMDB
-            const response = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}`);
-            if (!response.ok) return res.status(500).json({ error: "TMDb fetch failed" });
+
+            // no cache → fetch from TMDB
+            const response = await fetch(`${BASE_URL}/movie/${tmdbID}?api_key=${TMDB_API_KEY}`);
+
+            if (!response.ok) {
+                return res.status(500).json({ error: "TMDb fetch failed" });
+            }
 
             tmdbData = await response.json();
 
-            // Save cache
-            await cache.updateOne(
-                { tmdbID: Number(id) },
-                {
-                    $set: {
-                        tmdbID: Number(id),
-                        data: tmdbData,
-                        cachedAt: new Date()
-                    }
-                },
-                { upsert: true }
-            );
+            await cache.insertOne({
+                tmdbID,
+                data: tmdbData,
+                cachedAt: new Date()
+            });
         }
 
-        // 2️⃣ Fetch DB record
-        const dbMovie = await db.collection("movies").findOne({ tmdbID: Number(id) });
+        const dbMovie = await db.collection("movies").findOne({ tmdbID });
 
-        // 3️⃣ Merge
         const merged = {
             ...tmdbData,
             pinned: dbMovie?.pinned || false,
