@@ -55,6 +55,8 @@ export async function setTrendingMovieService(tmdbID, trendingOrder = null) {
 
 
 /* ================= REMOVE FROM TRENDING ================= */
+
+/* ================= REMOVE FROM TRENDING ================= */
 export async function removeTrendingMovieService(tmdbID) {
     const db = await getDb();
     const movies = db.collection("movies");
@@ -62,10 +64,20 @@ export async function removeTrendingMovieService(tmdbID) {
     const movie = await movies.findOne({ tmdbID });
     if (!movie) throw new Error("Movie not found");
 
+    const trendingData = {
+        isTrending: false,
+        trendingOrder: null
+    };
+
     await movies.updateOne(
         { tmdbID },
-        { $set: { trending: { isTrending: false, trendingOrder: null }, updatedAt: new Date() } }
+        {
+            $set: {
+                trending: trendingData,
+                updatedAt: new Date()
+            }
+        }
     );
-    // Return full movie info
+
     return { ...movie, trending: trendingData };
 }
