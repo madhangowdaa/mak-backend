@@ -1,4 +1,4 @@
-// services\trendingService.js
+// services/trendingService.js
 import { getDb } from "../db.js";
 
 /* ================= GET TRENDING MOVIES ================= */
@@ -24,7 +24,7 @@ export async function getTrendingMoviesService(limit = 10) {
         poster_path: m.poster_path,
         release_date: m.release_date,
         genres: m.genres || [],
-        fileLink: m.fileLink,
+        // fileLink: m.fileLink,
         pinned: m.pinned || false,
         clicks: m.clicks || 0,
         trending: m.trending || { isTrending: false, trendingOrder: null }
@@ -49,14 +49,10 @@ export async function setTrendingMovieService(tmdbID, trendingOrder = null) {
         { $set: { trending: trendingData, updatedAt: new Date() } }
     );
 
-    // Return full movie info
     return { ...movie, trending: trendingData };
 }
 
-
-/* ================= REMOVE FROM TRENDING ================= */
-
-/* ================= REMOVE FROM TRENDING ================= */
+/* ================= REMOVE FROM TRENDING + REORDER ================= */
 export async function removeTrendingMovieService(tmdbID) {
     const db = await getDb();
     const movies = db.collection("movies");
@@ -64,6 +60,7 @@ export async function removeTrendingMovieService(tmdbID) {
     const movie = await movies.findOne({ tmdbID });
     if (!movie) throw new Error("Movie not found");
 
+    // 1️⃣ Remove trending flag
     const trendingData = {
         isTrending: false,
         trendingOrder: null
@@ -72,12 +69,24 @@ export async function removeTrendingMovieService(tmdbID) {
     await movies.updateOne(
         { tmdbID },
         {
-            $set: {
-                trending: trendingData,
-                updatedAt: new Date()
-            }
+            $set: { trending: trendingData, updatedAt: new Date() }
         }
     );
+
+    // 2️⃣ Reorder remaining trending movies
+    const trendingMovies = await movies
+        .find({ "trending.isTrending": true })
+        .sort({ "trending.trendingOrder": 1 })
+        .toArray();
+
+    for (let i = 0; i < trendingMovies.length; i++) {
+        const tm = trendingMovies[i];
+        // Assign sequential order: 1, 2, 3...
+        await movies.updateOne(
+            { tmdbID: tm.tmdbID },
+            { $set: { "trending.trendingOrder": i + 1 } }
+        );
+    }
 
     return { ...movie, trending: trendingData };
 }
