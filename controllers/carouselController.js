@@ -16,6 +16,7 @@ export async function getCarouselController(req, res) {
 export async function addCarouselController(req, res) {
     try {
         const { tmdbID, imagePath, imageType, orderPos } = req.body;
+        const id = Number(tmdbID);
 
         if (!tmdbID || !imagePath) {
             return res.status(400).json({ error: "tmdbID and imagePath required" });
@@ -23,13 +24,13 @@ export async function addCarouselController(req, res) {
 
         const db = await getDb();
 
-        const exists = await db.collection("carousel").findOne({ tmdbID });
+        const exists = await db.collection("carousel").findOne({ tmdbID: id });
         if (exists) {
             return res.status(409).json({ error: "Slide already exists" });
         }
 
         // 🔥 Fetch from TMDB
-        const movie = await fetchMovieFromTMDB(tmdbID);
+        const movie = await fetchMovieFromTMDB(id);
 
         let order = 0;
 
@@ -54,7 +55,7 @@ export async function addCarouselController(req, res) {
         }
 
         const slide = {
-            tmdbID,
+            tmdbID: id,
             title: movie.title,
             overview: movie.overview,
             poster_path: movie.poster_path,
@@ -93,27 +94,37 @@ export async function deleteCarouselController(req, res) {
 
 export async function moveCarouselController(req, res) {
     const { tmdbID, position } = req.body;
+    const id = Number(tmdbID);
 
-    if (!tmdbID || position === undefined) {
+    if (!id || position === undefined) {
         return res.status(400).json({ error: "tmdbID and position required" });
     }
 
     const db = await getDb();
 
-    const slide = await db.collection("carousel").findOne({ tmdbID });
-    if (!slide) return res.status(404).json({ error: "Slide not found" });
-
     const slides = await db.collection("carousel")
         .find({})
-        .sort({ order: 1 })
+        .sort({ order: 1, createdAt: 1 })
         .toArray();
+
+    const oldIndex = slides.findIndex(s => s.tmdbID === id);
+
+    if (oldIndex === -1) {
+        return res.status(404).json({ error: "Slide not found" });
+    }
+
+    const slide = slides[oldIndex];
 
     const maxPos = slides.length - 1;
     const newPos = Math.max(0, Math.min(position, maxPos));
 
-    slides.splice(slide.order, 1);
+    // remove
+    slides.splice(oldIndex, 1);
+
+    // insert
     slides.splice(newPos, 0, slide);
 
+    // update DB
     for (let i = 0; i < slides.length; i++) {
         await db.collection("carousel").updateOne(
             { tmdbID: slides[i].tmdbID },
@@ -126,10 +137,12 @@ export async function moveCarouselController(req, res) {
 
 export async function pinCarouselController(req, res) {
     const { tmdbID } = req.body;
+    const id = Number(tmdbID);
+
     const db = await getDb();
 
     await db.collection("carousel").updateOne(
-        { tmdbID },
+        { tmdbID: id },
         { $set: { pinned: true } }
     );
 
@@ -138,10 +151,12 @@ export async function pinCarouselController(req, res) {
 
 export async function unpinCarouselController(req, res) {
     const { tmdbID } = req.body;
+    const id = Number(tmdbID);
+
     const db = await getDb();
 
     await db.collection("carousel").updateOne(
-        { tmdbID },
+        { tmdbID: id },
         { $set: { pinned: false } }
     );
 
