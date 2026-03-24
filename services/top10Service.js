@@ -117,6 +117,12 @@ export async function getTop10Service() {
     // Merge movie info with rank
     return topMovies.map(t => {
         const m = movies.find(mv => mv.tmdbID === t.tmdbID);
-        return { ...t, ...m };
+
+        // Destructure to extract the fields you want to HIDE
+        // Use 'rest' to collect everything else
+        const { fileLink, ultraLink, ...movieWithoutLinks } = { ...t, ...m };
+
+        return movieWithoutLinks;
     });
+
 }
