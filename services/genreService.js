@@ -21,7 +21,7 @@ export async function getGenrePreviewService(genre, limit = 10) {
         title: m.title,
         poster_path: m.poster_path,
         genres: m.genres || [],
-        fileLink: m.fileLink,
+        // fileLink: m.fileLink,
     }));
 }
 
@@ -62,7 +62,7 @@ export async function getMoviesByGenreService({
             poster_path: m.poster_path,
             release_date: m.release_date,
             genres: m.genres || [],
-            fileLink: m.fileLink,
+            // fileLink: m.fileLink,
             pinned: m.pinned || false,
             clicks: m.clicks || 0,
             trending: m.trending || {},
