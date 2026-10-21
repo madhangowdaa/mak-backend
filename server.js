@@ -8,6 +8,7 @@ import tmdbRouter from './routes/tmdb.js';
 import tmdbRoutes from './routes/tmdbRoutes.js';
 import carouselRoutes from './routes/carouselRoutes.js';
 import notificationsRouter from './routes/notifications.js';
+import analyticsRouter from './routes/analytics.js';
 import top10Routes from './routes/top10.js';
 import trendingRoutes from './routes/trending.js';
 import genreRoutes from './routes/genres.js';
@@ -44,6 +45,7 @@ app.use('/api/tmdb', tmdbRouter);
 app.use('/api/populartmdb', tmdbRoutes);
 app.use('/api/carousel', carouselRoutes);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/analytics', analyticsRouter);
 app.use('/uploads', express.static('uploads')); // serve uploaded images
 app.use('/api', top10Routes);
 app.use('/api', trendingRoutes);
